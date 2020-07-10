@@ -7,11 +7,11 @@
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "license": "SEE LICENSE IN LICENSE.txt",
+  "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "prepare": "npm run clean && npm run build",
     "clean": "rimraf dist",
-    "build": "tsc && npm run format-code",
+    "build": "npm run format-code && tsc",
     "format-code": "tsfmt -r",
     "watch": "tsc --watch"
   },
