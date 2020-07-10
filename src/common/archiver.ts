@@ -30,7 +30,7 @@ export async function zip(files: string[], zipPath: string, pluginRootFolder: st
 
     archive.on('warning', function(err) {
         if (err.code === 'ENOENT') {
-            console.warn(err);
+            console.error(err);
         } else {
             throw err;
         }
