@@ -24,12 +24,12 @@ export class Packing {
     private userIgnore: string[];
     private includeFiles: string[];
 
-    constructor(mode: PackType, userIgnore: string[], includeFiles: string[]) {
+    constructor(mode: PackType, userIgnore: string[], includeFiles: string[], allFiles: string[]) {
         this.pluginRootFolder = path.resolve(process.cwd());
         this.packMode = mode;
         this.userIgnore = userIgnore;
         this.includeFiles = includeFiles;
-        this.getAllFiles(this.pluginRootFolder);
+        this.allFiles = allFiles;
     }
 
     public async start() {
@@ -97,8 +97,8 @@ export class Packing {
 
     private checkNecessary(list: string[]) {
         list.forEach((item) => {
-            if (item == 'package.json' || item == 'README.md') {
-                console.warn('\n❗ Exclude "' + item + '" may cause problem with the package.');
+            if (item === 'package.json' || item === 'README.md') {
+                console.warn('\n⚠️ Exclude "' + item + '" may cause problem with the package.');
             }
         });
     }
@@ -110,26 +110,6 @@ export class Packing {
                 if (filter(file)) {
                     this.modeIgnore.push(file);
                 }
-            });
-        });
-    }
-
-    public getAllFiles(folder: string) {
-        fs.readdir(folder, (err, files) => {
-            if (err) { throw err; }
-            files.forEach(file => {
-                if (file === 'node_modules' || file === '.git') {
-                    return;
-                }
-                const fPath = path.join(folder, file);
-                fs.stat(fPath, (err, stat) => {
-                    if (err) { throw err; }
-                    if (stat.isFile()) {
-                        this.allFiles.push(path.relative(this.pluginRootFolder, fPath));
-                    } else {
-                        this.getAllFiles(fPath);
-                    }
-                });
             });
         });
     }

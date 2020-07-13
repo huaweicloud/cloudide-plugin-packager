@@ -12,50 +12,39 @@ import { fileMatch } from '../common/file-matcher';
 
 const pluginRootFolder = path.resolve(process.cwd());
 const specialFiles: SpecialFiles = { 'include': [], 'exclude': [] };
+const defaultExcludeFolders = ['node_modules', '.git'];
 
 export async function pack(type: PackType, excludeFiles: string[], includeFiles: string[]) {
     const moduleName = (await readPkg()).name;
     if (moduleName.indexOf('.') !== -1) {
-        console.log(' ❗ Package name can not include "." character.');
+        console.warn('⚠️ Package name can not include "." character.');
         return;
     }
     const allFiles = await getAllFiles(pluginRootFolder);
     if (excludeFiles.length) {
-        const rightRule = await checkRules(excludeFiles);
-        if (!rightRule) return;
-        const excludeMatchFiles = await getMatchFiles('exclude', excludeFiles, allFiles);
-        if (!excludeMatchFiles.length) {
-            return;
-        }
+        await checkRules(excludeFiles);
+        await getMatchFiles('exclude', excludeFiles, allFiles);
     }
     if (includeFiles.length) {
-        const rightRule = await checkRules(includeFiles);
-        if (!rightRule) return;
-        const includeMatchFiles = await getMatchFiles('include', includeFiles, allFiles);
-        if (!includeMatchFiles.length) {
-            return;
-        }
+        await checkRules(includeFiles);
+        await getMatchFiles('include', includeFiles, allFiles);
     }
     const { exclude, include } = specialFiles;
-    if (type == 'production') {
-        new Packing('production', exclude, include).start();
+    if (type === 'production') {
+        new Packing('production', exclude, include, allFiles).start();
     } else {
-        new Packing('development', exclude, include).start();
+        new Packing('development', exclude, include, allFiles).start();
     }
 }
 
-function checkRules(list: string[]) {
-    let rightRule = true;
-    list.forEach((item) => {
-        if (item.indexOf('node_modules') !== -1) {
-            console.log(' ❗ Can not change the packaging mode of node_modules folder.');
-            rightRule = false;
-        } else if (item.indexOf('.git') !== -1) {
-            console.log(' ❗ Can not change the packaging mode of .git folder.');
-            rightRule = false;
-        }
+function checkRules(rules: string[]) {
+    rules.forEach((rule) => {
+        defaultExcludeFolders.forEach((item) => {
+            if (rule.indexOf(item) !== -1) {
+                console.warn(`⚠️ Can not change the packaging mode of ${item}.`);
+            }
+        });
     });
-    return rightRule;
 }
 
 function getMatchFiles(type: CheckType, matchRules: string[], files: string[]) {
@@ -71,8 +60,8 @@ function getMatchFiles(type: CheckType, matchRules: string[], files: string[]) {
         });
     });
     temps.forEach((temp, index) => {
-        if (!temp) {
-            console.log(`❗ "${matchRules[index]}" does not math any files.`)
+        if (!temp && defaultExcludeFolders.indexOf(matchRules[index]) === -1) {
+            console.warn(`⚠️ "${matchRules[index]}" does not math any files.`)
         }
     })
     specialFiles[type] = matchFiles;
@@ -86,7 +75,7 @@ function getAllFiles(folder: string) {
         files.forEach((item, index) => {
             let fPath = path.join(folder, item);
             let stat = fs.statSync(fPath);
-            if (item === 'node_modules' || item === '.git') {
+            if (defaultExcludeFolders.indexOf(item) !== -1) {
                 return;
             }
             if (stat.isFile() === true) {
