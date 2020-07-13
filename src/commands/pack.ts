@@ -5,21 +5,19 @@
 
 import * as path from "path";
 import * as fs from "fs";
-import * as readPkg from "read-pkg";
 import { Packing } from "../common/packing";
 import { PackType, CheckType, SpecialFiles } from '../common/pack-configuration';
 import { fileMatch } from '../common/file-matcher';
+import { detection } from '../common/detection';
 
 const pluginRootFolder = path.resolve(process.cwd());
 const specialFiles: SpecialFiles = { 'include': [], 'exclude': [] };
 const defaultExcludeFolders = ['node_modules', '.git'];
 
 export async function pack(type: PackType, excludeFiles: string[], includeFiles: string[]) {
-    const moduleName = (await readPkg()).name;
-    if (moduleName.indexOf('.') !== -1) {
-        console.warn('⚠️ Package name can not include "." character.');
-        return;
-    }
+    const checkValid = detection(false);
+    if (!checkValid) return;
+    
     const allFiles = await getAllFiles(pluginRootFolder);
     if (excludeFiles.length) {
         await checkRules(excludeFiles);
