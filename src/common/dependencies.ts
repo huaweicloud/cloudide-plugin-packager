@@ -11,7 +11,5 @@ export async function getDependencies(): Promise<string[]> {
     const result = await shellExec('npm i && npm list --parseable --prod');
     const dependencies = result.split('\n');
 
-    return Promise.resolve(dependencies.filter((value) => {
-        return value.split("node_modules").length === 2;
-    }));
+    return Promise.resolve(dependencies);
 }
