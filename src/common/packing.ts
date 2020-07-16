@@ -9,7 +9,6 @@ import * as micromatch from "micromatch";
 import * as path from "path";
 import { getDependencies } from "./dependencies";
 import { zip } from "./archiver";
-import * as ora from "ora";
 import * as readPkg from "read-pkg";
 import { PackType } from './pack-configuration';
 import { fileMatch } from './file-matcher';
@@ -33,11 +32,11 @@ export class Packing {
     }
 
     public async start() {
-        const spinner = ora({
-            text: "Installing npm dependencie……",
-            color: "yellow"
-        }).start();
-        this.dependencies = await getDependencies();
+        await getDependencies().then((result) => {
+            this.dependencies = result;
+        });
+        if (!this.dependencies.length) return;
+
         const globOptions = { nocase: true, nosort: true, ignore: ["node_modules/**", "*.cloudide"], nodir: true, dot: true };
 
         this.toZipFiles = this.toZipFiles.concat.apply([],
@@ -50,7 +49,6 @@ export class Packing {
             await (glob.promise("**", Object.assign(globOptions, { cwd: this.pluginRootFolder }),
             )).then((data: string[]) => data.map((name) => path.join(this.pluginRootFolder, name))));
 
-        spinner.stop().clear();
         await this.doExclude();
     }
 

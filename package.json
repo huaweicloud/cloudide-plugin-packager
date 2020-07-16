@@ -1,6 +1,6 @@
 {
   "name": "@cloudide/plugin-packager",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A packager tool for huawei-cloudide's plugin.",
   "bin": {
     "cloudide-pack": "dist/index.js"
@@ -21,7 +21,6 @@
     "fs-extra": "^9.0.0",
     "glob-promise": "^3.4.0",
     "micromatch": "^4.0.2",
-    "ora": "^4.0.4",
     "read-pkg": "^5.2.0"
   },
   "keywords": [
