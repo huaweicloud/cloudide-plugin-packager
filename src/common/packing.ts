@@ -37,7 +37,7 @@ export class Packing {
         });
         if (!this.dependencies.length) return;
 
-        const globOptions = { nocase: true, nosort: true, ignore: ["node_modules/**", "*.cloudide"], nodir: true, dot: true };
+        const globOptions = { nocase: true, nosort: true, ignore: ["node_modules/**", "*.cloudide", ".git/**"], nodir: true, dot: true };
 
         this.toZipFiles = this.toZipFiles.concat.apply([],
             await Promise.all(this.dependencies.map((dependencyDirectory) => {
@@ -57,7 +57,7 @@ export class Packing {
             this.checkNecessary(this.userIgnore);
         }
         if (this.packMode === 'production') {
-            const checkList = [".git", ".gitignore", 'tsconfig.json', 'tsfmt.json', 'webpack.config.js',
+            const checkList = [".gitignore", 'tsconfig.json', 'tsfmt.json', 'webpack.config.js',
                 'yarn-error.log', 'yarn.lock', 'npm-debug.log', 'package-lock.json', 'src/**/*', '**/*.map', '*.cloudide'];
             await this.fuzzyMatch(checkList);
         }
