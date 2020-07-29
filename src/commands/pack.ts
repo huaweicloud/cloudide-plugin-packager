@@ -14,7 +14,7 @@ const pluginRootFolder = path.resolve(process.cwd());
 const specialFiles: SpecialFiles = { 'include': [], 'exclude': [] };
 const defaultExcludeFolders = ['node_modules', '.git'];
 
-export async function pack(type: PackType, excludeFiles: string[], includeFiles: string[]) {
+export async function pack(type: PackType, excludeFiles: string[], includeFiles: string[], skipPrepare: boolean) {
     const moduleName = (await readPkg()).name;
     if (moduleName.indexOf('.') !== -1) {
         console.warn('⚠️ Package name can not include "." character.');
@@ -31,9 +31,9 @@ export async function pack(type: PackType, excludeFiles: string[], includeFiles:
     }
     const { exclude, include } = specialFiles;
     if (type === 'production') {
-        new Packing('production', exclude, include, allFiles).start();
+        new Packing('production', exclude, include, allFiles).start(skipPrepare);
     } else {
-        new Packing('development', exclude, include, allFiles).start();
+        new Packing('development', exclude, include, allFiles).start(skipPrepare);
     }
 }
 

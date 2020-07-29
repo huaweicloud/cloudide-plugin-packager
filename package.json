@@ -1,6 +1,6 @@
 {
   "name": "@cloudide/plugin-packager",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "A packager tool for huawei-cloudide's plugin.",
   "bin": {
     "cloudide-pack": "dist/index.js"

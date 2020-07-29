@@ -31,8 +31,8 @@ export class Packing {
         this.allFiles = allFiles;
     }
 
-    public async start() {
-        await getDependencies().then((result) => {
+    public async start(skipPrepare: boolean) {
+        await getDependencies(skipPrepare).then((result) => {
             this.dependencies = result;
         });
         if (!this.dependencies.length) return;

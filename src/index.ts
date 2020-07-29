@@ -27,6 +27,7 @@ directly to set files you want to include or exclude like: { "exclude": [], "inc
         (file: string, previous: string[]) => {
             return previous.concat(file);
         }, [])
+    .option('-s, --skip-prepare', 'Skip npm install before packing.')
     .parse(process.argv);
 
 const configPath = path.resolve(process.cwd()) + '/pack-config.json';
@@ -43,7 +44,7 @@ try {
     includeFiles = program.includeFile;
 }
 if (program.production) {
-    pack('production', excludeFiles, includeFiles);
+    pack('production', excludeFiles, includeFiles, program.skipPrepare);
 } else {
-    pack('development', excludeFiles, includeFiles);
+    pack('development', excludeFiles, includeFiles, program.skipPrepare);
 }
