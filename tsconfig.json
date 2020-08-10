@@ -3,11 +3,13 @@
         "target": "es2015",
         "module": "commonjs",
         "declaration": true,
+        "rootDir": "src",
         "outDir": "./dist",
         "strict": true
     },
     "exclude": [
         "node_modules",
-        "dist"
+        "dist",
+        "tests/**"
     ]
 }

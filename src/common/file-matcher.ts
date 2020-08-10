@@ -39,11 +39,11 @@ export function fileMatch(filter: string) {
     const negateRule = negate.length ? new RegExp(negate.join('|')) : null;
 
     return (filepath: string) => {
-        if (negateRule && negateRule.test(filepath)) {
-            return false;
+        if (negateRule) {
+            return negateRule.test(filepath) ? false : true;
         }
-        if (matchRule && matchRule.test(filepath)) {
-            return true;
+        if (matchRule) {
+            return matchRule.test(filepath) ? true : false;
         }
         return false;
     };
