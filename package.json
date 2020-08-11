@@ -1,6 +1,6 @@
 {
   "name": "@cloudide/plugin-packager",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "A packager tool for huawei-cloudide's plugin.",
   "bin": {
     "cloudide-pack": "dist/index.js"
@@ -11,7 +11,8 @@
   "scripts": {
     "prepare": "npm run clean && npm run build",
     "clean": "rimraf dist",
-    "build": "npm run format-code && tsc",
+    "build": "npm run format-code && tsc && npm run test",
+    "test": "mocha -r ts-node/register 'tests/**/*.ts'",
     "format-code": "tsfmt -r",
     "watch": "tsc --watch"
   },
@@ -31,11 +32,18 @@
   ],
   "devDependencies": {
     "@types/archiver": "^3.1.0",
+    "@types/chai": "^4.2.11",
     "@types/fs-extra": "^9.0.1",
     "@types/micromatch": "^4.0.1",
-    "typescript": "^3.9.3",
+    "@types/mocha": "^8.0.0",
+    "@types/unzipper": "^0.10.3",
+    "chai": "^4.2.0",
+    "mocha": "^8.0.1",
     "rimraf": "^3.0.2",
+    "ts-node": "^8.10.2",
     "tslint": "^5.1.0",
-    "typescript-formatter": "^7.1.0"
+    "typescript": "^3.9.3",
+    "typescript-formatter": "^7.1.0",
+    "unzipper": "^0.10.11"
   }
 }

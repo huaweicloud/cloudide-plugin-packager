@@ -35,11 +35,10 @@ export class Packing {
         await getDependencies(skipPrepare).then((result) => {
             this.dependencies = result;
         });
-        if (!this.dependencies.length) return;
 
         const globOptions = { nocase: true, nosort: true, ignore: ["node_modules/**", "*.cloudide", ".git/**"], nodir: true, dot: true };
 
-        this.toZipFiles = this.toZipFiles.concat.apply([],
+        this.toZipFiles = !this.dependencies.length ? [] : this.toZipFiles.concat.apply([],
             await Promise.all(this.dependencies.map((dependencyDirectory) => {
                 return glob.promise("**", Object.assign(globOptions, { cwd: dependencyDirectory }))
                     .then((data) => data.map((name) => path.join(dependencyDirectory, name)));
@@ -79,7 +78,7 @@ export class Packing {
         if (this.userIgnore.length || this.packMode === 'production') {
             console.log('Excluding files:\n', this.modeIgnore.concat(this.userIgnore));
         }
-        return zip(this.toZipFiles, zipPath, this.pluginRootFolder);
+        zip(this.toZipFiles, zipPath, this.pluginRootFolder).catch((e) => console.error(e));
     }
 
     private doInclude() {
