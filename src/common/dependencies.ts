@@ -17,7 +17,7 @@ export function getDependencies(skipPrepare: boolean): Promise<string[]> {
   }
   console.log("Excuting npm install...");
   return new Promise<string[]>((resolve, reject) => {
-    const install = spawn("npm", ["i"], { stdio: "inherit" });
+    const install = spawn("npm", ["i"], { stdio: "inherit", shell: true });
     install.on("close", (code: number) => {
       if (code !== 0) {
         console.error(
@@ -39,7 +39,7 @@ export function getDependencies(skipPrepare: boolean): Promise<string[]> {
 
 function getInstalledPkgs(): Promise<string[]> {
   return new Promise<string[]>((resolve, reject) => {
-    const list = spawn("npm", ["list", "--parseable", "--prod"]);
+    const list = spawn("npm", ["list", "--parseable", "--prod"], { shell: true });
     let dependencies: string[] = [];
     list.stdout.on("data", (data: Buffer) => {
       dependencies = data.toString().split("\n");
