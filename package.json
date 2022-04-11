@@ -1,6 +1,6 @@
 {
   "name": "@cloudide/plugin-packager",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "A packager tool for huawei-cloudide's plugin.",
   "bin": {
     "cloudide-pack": "dist/index.js"
@@ -40,12 +40,12 @@
     "@types/unzipper": "^0.10.3",
     "@typescript-eslint/eslint-plugin": "^3.6.1",
     "@typescript-eslint/parser": "^3.6.1",
+    "chai": "^4.2.0",
     "eslint": "^7.4.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-prettier": "^3.1.4",
-    "prettier": "^2.0.5",
-    "chai": "^4.2.0",
     "mocha": "^8.0.1",
+    "prettier": "^2.0.5",
     "rimraf": "^3.0.2",
     "ts-node": "^8.10.2",
     "tslint": "^5.1.0",

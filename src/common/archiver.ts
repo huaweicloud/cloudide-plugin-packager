@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: MIT
  ********************************************************************************/
 
-import * as fs from "fs";
-import * as path from "path";
-import * as archiver from "archiver";
+import * as fs from 'fs';
+import * as path from 'path';
+import * as archiver from 'archiver';
 
 /**
  * Compresses the given folder as the plugin.
@@ -13,44 +13,41 @@ import * as archiver from "archiver";
  * @param zipPath output path
  * @param pluginRootFolder root folder
  */
-export function zip(
-  files: string[],
-  zipPath: string,
-  pluginRootFolder: string
-): Promise<string> {
-  return new Promise<string>(async (resolve, reject) => {
-    const output = fs.createWriteStream(zipPath);
-    const archive = archiver("zip", {
-      zlib: { level: 9 },
-    });
+/* eslint-disable prettier/prettier */
+export function zip(files: string[], zipPath: string, pluginRootFolder: string): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+        const output = fs.createWriteStream(zipPath);
+        const archive = archiver('zip', {
+            zlib: { level: 9 }
+        });
 
-    output.on("close", function () {
-      console.log(
-        "✔️  Packing completed: " +
-          zipPath +
-          `\n If you have any problems during the process, please create an issue on github.
+        output.on('close', () => {
+            console.log(
+                '✔️  Packing completed: ' +
+                zipPath +
+                `\n If you have any problems during the process, please create an issue on github.
         (https://github.com/huaweicloud/cloudide-plugin-packager/issues/new)`
-      );
-      resolve();
+            );
+            resolve();
+        });
+
+        archive.on('warning', (err) => {
+            if (err.code === 'ENOENT') {
+                reject(err);
+            }
+            console.warn(err);
+        });
+
+        archive.on('error', (err) => {
+            reject(err);
+        });
+
+        archive.pipe(output);
+
+        files.forEach((file) => {
+            archive.file(file, { name: path.relative(pluginRootFolder, file) });
+        });
+
+        archive.finalize();
     });
-
-    archive.on("warning", function (err) {
-      if (err.code === "ENOENT") {
-        reject(err);
-      }
-      console.warn(err);
-    });
-
-    archive.on("error", function (err) {
-      reject(err);
-    });
-
-    archive.pipe(output);
-
-    files.forEach((file) => {
-      archive.file(file, { name: path.relative(pluginRootFolder, file) });
-    });
-
-    archive.finalize();
-  });
 }
