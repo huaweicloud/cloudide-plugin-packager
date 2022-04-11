@@ -6,7 +6,7 @@
 import * as glob from 'glob-promise';
 import * as micromatch from 'micromatch';
 import * as path from 'path';
-import { getDependencies } from './dependencies';
+import { getInstalledPkgs, doPrepare } from './dependencies';
 import { zip } from './archiver';
 import * as readPkg from 'read-pkg';
 import { PackType } from './pack-configuration';
@@ -35,9 +35,10 @@ export class Packing {
     }
 
     public async start(skipPrepare: boolean): Promise<void> {
-        await getDependencies(skipPrepare).then((result) => {
-            this.dependencies = result;
-        });
+        if (!skipPrepare) {
+            await doPrepare();
+        }
+        this.dependencies = await getInstalledPkgs();
 
         const globOptions = {
             nocase: true,
