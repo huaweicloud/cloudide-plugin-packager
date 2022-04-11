@@ -1,4 +1,5 @@
 import { fileMatch } from '../src/common/file-matcher';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const assert = require('assert');
 
 describe('test file matcher', () => {

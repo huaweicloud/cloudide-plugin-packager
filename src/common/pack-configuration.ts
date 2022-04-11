@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: MIT
  ********************************************************************************/
 
-export type PackType = "development" | "production";
+export type PackType = 'development' | 'production';
 
-export type CheckType = "include" | "exclude";
+export type CheckType = 'include' | 'exclude';
 
 export interface SpecialFiles {
-  include: string[];
-  exclude: string[];
+    include: string[];
+    exclude: string[];
 }
