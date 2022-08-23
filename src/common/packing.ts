@@ -43,7 +43,7 @@ export class Packing {
         const globOptions = {
             nocase: true,
             nosort: true,
-            ignore: ['node_modules/**', '*.cloudide', '.git/**'],
+            ignore: ['node_modules/**', '*.carts', '.git/**', '.arts/**'],
             nodir: true,
             dot: true
         };
@@ -51,15 +51,15 @@ export class Packing {
         this.toZipFiles = !this.dependencies.length
             ? []
             : this.toZipFiles.concat.apply(
-                [],
-                await Promise.all(
-                    this.dependencies.map((dependencyDirectory) => {
-                        return glob
-                            .promise('**', Object.assign(globOptions, { cwd: dependencyDirectory }))
-                            .then((data) => data.map((name) => path.join(dependencyDirectory, name)));
-                    })
-                )
-            );
+                  [],
+                  await Promise.all(
+                      this.dependencies.map((dependencyDirectory) => {
+                          return glob
+                              .promise('**', Object.assign(globOptions, { cwd: dependencyDirectory }))
+                              .then((data) => data.map((name) => path.join(dependencyDirectory, name)));
+                      })
+                  )
+              );
 
         this.toZipFiles = this.toZipFiles.concat(
             await glob
@@ -86,7 +86,7 @@ export class Packing {
                 'package-lock.json',
                 'src/**/*',
                 '**/*.map',
-                '*.cloudide'
+                '*.carts'
             ];
             await this.fuzzyMatch(checkList);
         }
@@ -98,7 +98,7 @@ export class Packing {
         if (version) {
             moduleName += `-${version}`;
         }
-        const zipPath = path.resolve(this.pluginRootFolder + path.sep + moduleName + '.cloudide');
+        const zipPath = path.resolve(this.pluginRootFolder + path.sep + moduleName + '.carts');
 
         this.toZipFiles = this.toZipFiles.filter((file) => {
             const relativeFile = path.relative(this.pluginRootFolder, file);
@@ -135,10 +135,11 @@ export class Packing {
 
     private fuzzyMatch(list: string[]) {
         this.allFiles.forEach((file) => {
+            const filePath = file.split(path.sep).join('/');
             list.forEach((rule) => {
                 const filter = fileMatch(rule);
-                if (filter(file)) {
-                    this.modeIgnore.push(file);
+                if (filter(filePath)) {
+                    this.modeIgnore.push(filePath);
                 }
             });
         });

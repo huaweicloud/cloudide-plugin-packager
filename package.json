@@ -1,9 +1,9 @@
 {
-  "name": "@cloudide/plugin-packager",
-  "version": "0.0.11",
-  "description": "A packager tool for huawei-cloudide's plugin.",
+  "name": "@codearts/plugin-packager",
+  "version": "0.0.13",
+  "description": "A packager tool for huawei-codearts's plugin.",
   "bin": {
-    "cloudide-pack": "dist/index.js"
+    "codearts-pack": "dist/index.js"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -34,7 +34,7 @@
   },
   "keywords": [
     "huawei",
-    "cloudide",
+    "codearts",
     "plugin",
     "pack"
   ],
