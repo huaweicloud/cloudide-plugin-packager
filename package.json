@@ -1,9 +1,10 @@
 {
   "name": "@codearts/plugin-packager",
-  "version": "0.0.13",
+  "version": "0.0.16",
   "description": "A packager tool for huawei-codearts's plugin.",
   "bin": {
-    "codearts-pack": "dist/index.js"
+    "codearts-pack": "dist/index.js",
+    "vsix-mi": "dist/commands/migrate.js"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -30,6 +31,7 @@
     "fs-extra": "^9.0.0",
     "glob-promise": "^3.4.0",
     "micromatch": "^4.0.2",
+    "prompts": "^2.4.2",
     "read-pkg": "^5.2.0"
   },
   "keywords": [
