@@ -1,11 +1,15 @@
 {
   "name": "@codearts/plugin-packager",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "description": "A packager tool for huawei-codearts's plugin.",
   "bin": {
     "codearts-pack": "dist/index.js",
     "vsix-mi": "dist/commands/migrate.js"
   },
+  "files": [
+    "dist",
+    "ThirdPartyOpenSourceNotice.txt"
+  ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "license": "SEE LICENSE IN LICENSE",
