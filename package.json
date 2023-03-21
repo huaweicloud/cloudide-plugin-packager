@@ -1,6 +1,6 @@
 {
   "name": "@codearts/plugin-packager",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "description": "A packager tool for huawei-codearts's plugin.",
   "bin": {
     "codearts-pack": "dist/index.js",
