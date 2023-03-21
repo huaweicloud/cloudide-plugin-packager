@@ -1,6 +1,6 @@
 {
   "name": "@codearts/plugin-packager",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "A packager tool for huawei-codearts's plugin.",
   "bin": {
     "codearts-pack": "dist/index.js",
@@ -31,12 +31,20 @@
   },
   "dependencies": {
     "archiver": "^4.0.1",
-    "commander": "^2.15.1",
+    "axios": "^1.3.3",
+    "commander": "^10.0.0",
+    "form-data": "^4.0.0",
     "fs-extra": "^9.0.0",
-    "glob-promise": "^3.4.0",
+    "get-proxy-settings": "^0.1.13",
+    "glob-promise": "^6.0.2",
+    "https-proxy-agent": "^5.0.1",
+    "inquirer": "^8.0.0",
+    "leven": "^3.1.0",
     "micromatch": "^4.0.2",
     "prompts": "^2.4.2",
-    "read-pkg": "^5.2.0"
+    "read-pkg": "^5.2.0",
+    "single-line-log": "^1.1.2",
+    "yauzl": "^2.10.0"
   },
   "keywords": [
     "huawei",
@@ -48,9 +56,12 @@
     "@types/archiver": "^3.1.0",
     "@types/chai": "^4.2.11",
     "@types/fs-extra": "^9.0.1",
+    "@types/inquirer": "^9.0.3",
     "@types/micromatch": "^4.0.1",
     "@types/mocha": "^8.0.0",
+    "@types/single-line-log": "^1.1.0",
     "@types/unzipper": "^0.10.3",
+    "@types/yauzl": "^2.10.0",
     "@typescript-eslint/eslint-plugin": "^3.6.1",
     "@typescript-eslint/parser": "^3.6.1",
     "chai": "^4.2.0",
@@ -62,7 +73,7 @@
     "rimraf": "^3.0.2",
     "ts-node": "^8.10.2",
     "tslint": "^5.1.0",
-    "typescript": "^3.9.3",
+    "typescript": "^4.9.5",
     "typescript-formatter": "^7.1.0",
     "unzipper": "^0.10.11"
   }

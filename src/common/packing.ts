@@ -34,7 +34,7 @@ export class Packing {
         this.allFiles = allFiles;
     }
 
-    public async start(skipPrepare: boolean): Promise<void> {
+    public async start(skipPrepare: boolean): Promise<string | void> {
         if (!skipPrepare) {
             await doPrepare();
         }
@@ -51,15 +51,15 @@ export class Packing {
         this.toZipFiles = !this.dependencies.length
             ? []
             : this.toZipFiles.concat.apply(
-                  [],
-                  await Promise.all(
-                      this.dependencies.map((dependencyDirectory) => {
-                          return glob
-                              .promise('**', Object.assign(globOptions, { cwd: dependencyDirectory }))
-                              .then((data) => data.map((name) => path.join(dependencyDirectory, name)));
-                      })
-                  )
-              );
+                [],
+                await Promise.all(
+                    this.dependencies.map((dependencyDirectory) => {
+                        return glob
+                            .promise('**', Object.assign(globOptions, { cwd: dependencyDirectory }))
+                            .then((data) => data.map((name) => path.join(dependencyDirectory, name)));
+                    })
+                )
+            );
 
         this.toZipFiles = this.toZipFiles.concat(
             await glob
@@ -67,7 +67,7 @@ export class Packing {
                 .then((data: string[]) => data.map((name) => path.join(this.pluginRootFolder, name)))
         );
 
-        await this.doExclude();
+        return await this.doExclude();
     }
 
     private async doExclude() {
@@ -109,9 +109,13 @@ export class Packing {
         });
 
         if (this.userIgnore.length || this.packMode === 'production') {
-            console.log('Excluding files:\n', this.modeIgnore.concat(this.userIgnore));
+            console.log(
+                'Excluding files:\n',
+                this.modeIgnore.concat(this.userIgnore).map((file) => file.replace(/\\/g, '/'))
+            );
         }
-        zip(this.toZipFiles, zipPath, this.pluginRootFolder).catch((e) => console.error(e));
+
+        return await zip(this.toZipFiles, zipPath, this.pluginRootFolder).catch((e) => console.error(e));
     }
 
     private doInclude() {

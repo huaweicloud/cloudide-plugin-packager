@@ -26,7 +26,7 @@ export function getInstalledPkgs(): Promise<string[]> {
         list.on('close', (code: number) => {
             if (code !== 0) {
                 console.error(
-                    '❗️  Run npm list failed, please delete node_modules and run npm install, then try again.'
+                    '\x1B[41m ERROR \x1B[0m Run npm list failed, please delete node_modules and run npm install, then try again.'
                 );
                 reject(new Error(`Npm list process exited with code ${code}`));
             } else {

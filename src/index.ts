@@ -4,13 +4,26 @@
  * SPDX-License-Identifier: MIT
  ********************************************************************************/
 
-import * as path from 'path';
-import * as fs from 'fs';
+import leven from 'leven';
+import { program } from 'commander';
 import { pack } from './commands/pack';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const program = require('commander');
+import { publish } from './common/publish';
+import { getPackageFiles } from './common/util';
+
+interface PackageParams {
+    production: string;
+    excludeFile: string[];
+    includeFile: string[];
+    skipPrepare: boolean;
+}
+
+interface PublishParams {
+    pat: string;
+    packagePath: string[];
+}
 
 program
+    .command('package')
     .description(
         `A tool that help you personalize packaging, you can also create a 'pack-config.json' file 
 directly to set files you want to include or exclude like: { "exclude": [], "include": [] }.`
@@ -39,23 +52,50 @@ directly to set files you want to include or exclude like: { "exclude": [], "inc
         []
     )
     .option('-s, --skip-prepare', 'Skip npm install before packing.')
-    .parse(process.argv);
+    .action(({ production, excludeFile, includeFile, skipPrepare }: PackageParams) => {
+        toPack({ production, excludeFile, includeFile, skipPrepare });
+    });
 
-const configPath = path.resolve(process.cwd()) + '/pack-config.json';
-let excludeFiles: string[] = [];
-let includeFiles: string[] = [];
-try {
-    fs.accessSync(configPath);
-    const configs = JSON.parse(fs.readFileSync(configPath, { encoding: 'utf-8' }));
-    const { exclude, include } = configs;
-    excludeFiles = exclude && exclude.length ? program.excludeFile.concat(exclude) : program.excludeFile;
-    includeFiles = include && include.length ? program.includeFile.concat(include) : program.includeFile;
-} catch (err) {
-    excludeFiles = program.excludeFile;
-    includeFiles = program.includeFile;
+program
+    .command('publish')
+    .description('Publishes an extension')
+    .option('-p, --pat <token>', 'Personal Access Token')
+    .option(
+        '-i, --packagePath <paths...>',
+        'Publish the provided CARTS packages.',
+        (path: string, previous: string[]) => {
+            return previous.concat(path);
+        },
+        []
+    )
+    .action(({ pat, packagePath }: PublishParams) => {
+        toPublish({ pat, packagePath });
+    });
+
+program.on('command:*', ([cmd]: string) => {
+    program.outputHelp((help: string) => {
+        const availableCommands = program.commands.map((c: any) => c._name);
+        const suggestion = availableCommands.find((c: string) => leven(c, cmd) < c.length * 0.4);
+
+        help = `${help}
+Unknown command '${cmd}'`;
+
+        return suggestion ? `${help}, did you mean '${suggestion}'?\n` : `${help}.\n`;
+    });
+    process.exit(1);
+});
+
+program.parse(process.argv);
+
+function toPack({ production, excludeFile, includeFile, skipPrepare }: PackageParams) {
+    const { excludeFiles, includeFiles } = getPackageFiles(includeFile, excludeFile);
+    if (production) {
+        pack('production', excludeFiles, includeFiles, skipPrepare);
+    } else {
+        pack('development', excludeFiles, includeFiles, skipPrepare);
+    }
 }
-if (program.production) {
-    pack('production', excludeFiles, includeFiles, program.skipPrepare);
-} else {
-    pack('development', excludeFiles, includeFiles, program.skipPrepare);
+
+function toPublish({ pat, packagePath }: PublishParams) {
+    publish({ pat, packagePath });
 }
