@@ -14,8 +14,8 @@ import * as archiver from 'archiver';
  * @param pluginRootFolder root folder
  */
 /* eslint-disable prettier/prettier */
-export function zip(files: string[], zipPath: string, pluginRootFolder: string): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
+export function zip(files: string[], zipPath: string, pluginRootFolder: string): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
         const output = fs.createWriteStream(zipPath);
         const archive = archiver('zip', {
             zlib: { level: 9 }
@@ -28,7 +28,7 @@ export function zip(files: string[], zipPath: string, pluginRootFolder: string):
                 `\n If you have any problems during the process, please create an issue on github.
         (https://github.com/huaweicloud/cloudide-plugin-packager/issues/new)`
             );
-            resolve();
+            resolve(zipPath);
         });
 
         archive.on('warning', (err) => {

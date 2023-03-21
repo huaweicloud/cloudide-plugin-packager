@@ -30,7 +30,7 @@ export function fileMatch(filter: string): (filepath: string) => boolean {
             result += ')';
             return result;
         })
-        .replace(/([\/\.])/g, '\\$1');
+        .replace(/([\\\.])/g, '\\$1');
 
     filter = '(^' + filter + '$)';
 

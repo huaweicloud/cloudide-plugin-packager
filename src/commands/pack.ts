@@ -9,6 +9,8 @@ import * as readPkg from 'read-pkg';
 import { Packing } from '../common/packing';
 import { PackType, CheckType, SpecialFiles } from '../common/pack-configuration';
 import { fileMatch } from '../common/file-matcher';
+import { Manifest } from '../common/manifest';
+import { checkManifest, checkPackageFiles } from '../common/util';
 
 const pluginRootFolder = path.resolve(process.cwd());
 const specialFiles: SpecialFiles = { include: [], exclude: [] };
@@ -26,10 +28,17 @@ export async function pack(
     excludeFiles: string[],
     includeFiles: string[],
     skipPrepare: boolean
-): Promise<void> {
-    const moduleName = (await readPkg()).name;
-    if (moduleName.indexOf('.') !== -1) {
-        console.warn('⚠️ Package name can not include "." character.');
+): Promise<void | string> {
+    const pkg = (await readPkg()) as Manifest;
+    if (!(await checkManifest(pkg))) {
+        return;
+    }
+    const checkFileResult = await checkPackageFiles();
+    if (!checkFileResult) {
+        return;
+    }
+    if (pkg.name.indexOf('.') !== -1) {
+        console.warn('\x1B[43m WARNING \x1B[0m Package name can not include "." character.');
         return;
     }
     const allFiles = await getAllFiles(pluginRootFolder);
@@ -43,9 +52,9 @@ export async function pack(
     }
     const { exclude, include } = specialFiles;
     if (type === 'production') {
-        new Packing('production', exclude, include, allFiles).start(skipPrepare);
+        return new Packing('production', exclude, include, allFiles).start(skipPrepare);
     } else {
-        new Packing('development', exclude, include, allFiles).start(skipPrepare);
+        return new Packing('development', exclude, include, allFiles).start(skipPrepare);
     }
 }
 
@@ -53,7 +62,7 @@ function checkRules(rules: string[]) {
     rules.forEach((rule) => {
         defaultExcludeFolders.forEach((item) => {
             if (rule.indexOf(item) !== -1) {
-                console.warn(`⚠️ Can not change the packaging mode of ${item}.`);
+                console.warn(`\x1B[43m WARNING \x1B[0m Can not change the packaging mode of ${item}.`);
             }
         });
     });
@@ -64,7 +73,7 @@ function getMatchFiles(type: CheckType, matchRules: string[], files: string[]) {
     const temps = [...Array(matchRules.length).fill(0)];
     files.forEach((file) => {
         matchRules.forEach((rule, index) => {
-            const filter = fileMatch(rule);
+            const filter = fileMatch(transformSeparator(rule));
             if (filter(file)) {
                 ++temps[index];
                 matchFiles.push(file);
@@ -73,11 +82,16 @@ function getMatchFiles(type: CheckType, matchRules: string[], files: string[]) {
     });
     temps.forEach((temp, index) => {
         if (!temp && defaultExcludeFolders.indexOf(matchRules[index]) === -1) {
-            console.warn(`⚠️ "${matchRules[index]}" does not math any files.`);
+            console.warn(`\x1B[43m WARNING \x1B[0m "${matchRules[index]}" does not match any files.`);
         }
     });
     specialFiles[type] = matchFiles;
     return matchFiles;
+}
+
+function transformSeparator(rule: string) {
+    const absolutePath = path.resolve(rule);
+    return path.relative(pluginRootFolder, absolutePath);
 }
 
 function getAllFiles(folder: string) {
