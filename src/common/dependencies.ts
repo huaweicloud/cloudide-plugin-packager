@@ -10,7 +10,6 @@ import * as path from 'path';
  * Run `npm i` and `npm list --parseable--prod` to get dependencies.
  */
 export function getInstalledPkgs(): Promise<string[]> {
-    console.log('Excuting packing...');
     return new Promise<string[]>((resolve, reject) => {
         const list = spawn('npm', ['list', '--parseable', '--prod', '--depth=99999'], { shell: true });
         let dependencies: string[] = [];

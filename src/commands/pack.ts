@@ -7,13 +7,12 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as readPkg from 'read-pkg';
 import { Packing } from '../common/packing';
-import { PackType, CheckType, SpecialFiles } from '../common/pack-configuration';
-import { fileMatch } from '../common/file-matcher';
+import { PackType } from '../common/pack-configuration';
 import { Manifest } from '../common/manifest';
 import { checkManifest, checkPackageFiles } from '../common/util';
+import * as micromatch from 'micromatch';
 
 const pluginRootFolder = path.resolve(process.cwd());
-const specialFiles: SpecialFiles = { include: [], exclude: [] };
 const defaultExcludeFolders = ['node_modules', '.git'];
 
 /**
@@ -41,24 +40,22 @@ export async function pack(
         console.warn('\x1B[43m WARNING \x1B[0m Package name can not include "." character.');
         return;
     }
-    const allFiles = await getAllFiles(pluginRootFolder);
-    if (excludeFiles.length) {
-        await checkRules(excludeFiles);
-        await getMatchFiles('exclude', excludeFiles, allFiles);
-    }
-    if (includeFiles.length) {
-        await checkRules(includeFiles);
-        await getMatchFiles('include', includeFiles, allFiles);
-    }
-    const { exclude, include } = specialFiles;
+    const allFiles = getAllFiles(pluginRootFolder).map((f) => f.split(path.sep).join('/'));
+
+    checkRules([...excludeFiles, ...includeFiles]);
+    getMatchFiles([...excludeFiles, ...includeFiles], allFiles);
+
     if (type === 'production') {
-        return new Packing('production', exclude, include, allFiles).start(skipPrepare);
+        return new Packing('production', excludeFiles, includeFiles, allFiles).start(skipPrepare);
     } else {
-        return new Packing('development', exclude, include, allFiles).start(skipPrepare);
+        return new Packing('development', excludeFiles, includeFiles, allFiles).start(skipPrepare);
     }
 }
 
 function checkRules(rules: string[]) {
+    if (!rules.length) {
+        return;
+    }
     rules.forEach((rule) => {
         defaultExcludeFolders.forEach((item) => {
             if (rule.indexOf(item) !== -1) {
@@ -68,30 +65,23 @@ function checkRules(rules: string[]) {
     });
 }
 
-function getMatchFiles(type: CheckType, matchRules: string[], files: string[]) {
-    const matchFiles: string[] = [];
+function getMatchFiles(matchRules: string[], files: string[]) {
+    if (!matchRules.length) {
+        return;
+    }
     const temps = [...Array(matchRules.length).fill(0)];
     files.forEach((file) => {
         matchRules.forEach((rule, index) => {
-            const filter = fileMatch(transformSeparator(rule));
-            if (filter(file)) {
+            if (micromatch.contains(file, rule)) {
                 ++temps[index];
-                matchFiles.push(file);
             }
         });
     });
     temps.forEach((temp, index) => {
-        if (!temp && defaultExcludeFolders.indexOf(matchRules[index]) === -1) {
+        if (!temp && defaultExcludeFolders.every((e) => matchRules[index].indexOf(e) === -1)) {
             console.warn(`\x1B[43m WARNING \x1B[0m "${matchRules[index]}" does not match any files.`);
         }
     });
-    specialFiles[type] = matchFiles;
-    return matchFiles;
-}
-
-function transformSeparator(rule: string) {
-    const absolutePath = path.resolve(rule);
-    return path.relative(pluginRootFolder, absolutePath);
 }
 
 function getAllFiles(folder: string) {
@@ -104,7 +94,7 @@ function getAllFiles(folder: string) {
             if (defaultExcludeFolders.indexOf(item) !== -1) {
                 return;
             }
-            if (stat.isFile() === true) {
+            if (stat.isFile()) {
                 allFiles.push(path.relative(pluginRootFolder, fPath));
             } else {
                 findFile(fPath);
