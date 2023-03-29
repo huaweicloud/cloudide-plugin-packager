@@ -35,10 +35,11 @@ npm run pack
 
 ### Batch matching rule
 
--   \*.js match all js files.
+-   \*.js only match js files in current dir.
+-   \*\*/*.js match all js files.
 -   path/\*.js match js files in path.
 -   .{jpg,png,gif} means jpg, png or gif.
--   src/\*/ match all files in src.
+-   src/\*\* match all files in src.
 
 ## How to get the Access Token
 

@@ -97,6 +97,7 @@ export class Packing {
             this.checkNecessary(this.userIgnore);
         }
         this.modeIgnore = this.packMode === 'production' ? [...this.userIgnore, ...ProdDefaultExclude] : this.userIgnore;
+        this.modeIgnore = this.modeIgnore.map(r => this.pluginRootFolder + r);
 
         const pkgInfo = await readPkg();
         const { publisher, name, version } = pkgInfo;
