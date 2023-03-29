@@ -82,38 +82,6 @@ export async function checkManifest(manifest: Manifest): Promise<boolean> {
             return false;
         }
     }
-    const prompt = inquirer.createPromptModule();
-    if (!manifest['repository']) {
-        const message =
-            "A 'repository' field is missing from the 'package.json' manifest file . Do you want to continue?";
-        const ans = await prompt([
-            {
-                type: 'confirm',
-                name: 'check-repository-result',
-                message,
-                prefix: '\x1B[43m WARNING \x1B[0m '
-            }
-        ]);
-        if (!ans['check-repository-result']) {
-            return false;
-        }
-    }
-
-    if (manifest['activationEvents']?.length === 1 && manifest['activationEvents'][0] === '*') {
-        const message =
-            "Using '*' activation is usually a bad idea as it impacts performance. Do you want to continue?";
-        const ans = await prompt([
-            {
-                type: 'confirm',
-                name: 'check-activation-result',
-                message,
-                prefix: '\x1B[43m WARNING \x1B[0m '
-            }
-        ]);
-        if (!ans['check-activation-result']) {
-            return false;
-        }
-    }
 
     return true;
 }

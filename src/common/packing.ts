@@ -12,6 +12,27 @@ import * as readPkg from 'read-pkg';
 import { PackType } from './pack-configuration';
 import { fileMatch } from './file-matcher';
 
+const ProdDefaultExclude = [
+    '.gitignore',
+    '.vscodeignore',
+    '.prettierrc',
+    '.prettierignore',
+    '.eslintrc*',
+    'tsconfig.json',
+    'tsfmt.json',
+    'webpack.config.js',
+    'yarn-error.log',
+    'yarn.lock',
+    'npm-debug.log',
+    'package-lock.json',
+    'pack-config.json',
+    'src/**/*',
+    '**/*.map',
+    '*.carts'
+];
+
+const MicromatchOptions: micromatch.Options = { dot: true };
+
 /**
  * Filter the files based on the packaging rules to generate the final folder to be reached.
  */
@@ -22,6 +43,7 @@ export class Packing {
     private dependencies: string[] = [];
     private toZipFiles: string[] = [];
     private modeIgnore: string[] = [];
+    private ignoreFiles: string[] = [];
     private allFiles: string[] = [];
     private userIgnore: string[];
     private includeFiles: string[];
@@ -74,23 +96,7 @@ export class Packing {
         if (this.userIgnore) {
             this.checkNecessary(this.userIgnore);
         }
-        if (this.packMode === 'production') {
-            const checkList = [
-                '.gitignore',
-                'tsconfig.json',
-                'tsfmt.json',
-                'webpack.config.js',
-                'yarn-error.log',
-                'yarn.lock',
-                'npm-debug.log',
-                'package-lock.json',
-                'src/**/*',
-                '**/*.map',
-                '*.carts'
-            ];
-            await this.fuzzyMatch(checkList);
-        }
-        await this.doInclude();
+        this.modeIgnore = this.packMode === 'production' ? [...this.userIgnore, ...ProdDefaultExclude] : this.userIgnore;
 
         const pkgInfo = await readPkg();
         const { publisher, name, version } = pkgInfo;
@@ -100,22 +106,27 @@ export class Packing {
         }
         const zipPath = path.resolve(this.pluginRootFolder + path.sep + moduleName + '.carts');
 
-        this.toZipFiles = this.toZipFiles.filter((file) => {
-            const relativeFile = path.relative(this.pluginRootFolder, file);
-            return !micromatch.contains(
-                relativeFile,
-                this.userIgnore ? this.modeIgnore.concat(this.userIgnore) : this.modeIgnore
-            );
+        this.toZipFiles = this.toZipFiles.map(f => f.split(path.sep).join('/')).filter((file) => {
+            const isIgnored = !micromatch.contains(file, this.modeIgnore, MicromatchOptions) || micromatch.contains(file, this.includeFiles, MicromatchOptions);
+            if (isIgnored) {
+                this.ignoreFiles.push(file);
+            }
+            return isIgnored;
         });
 
         if (this.userIgnore.length || this.packMode === 'production') {
             console.log(
-                'Excluding files:\n',
-                this.modeIgnore.concat(this.userIgnore).map((file) => file.replace(/\\/g, '/'))
+                'Excluded files:\n',
+                this.ignoreFiles.filter(f => !f.includes('node_modules'))
             );
         }
 
-        return await zip(this.toZipFiles, zipPath, this.pluginRootFolder).catch((e) => console.error(e));
+        if (this.toZipFiles.length > 5000) {
+            console.log(`This extension consists of ${this.toZipFiles.length} files, you could exclude unnecessary files by adding them to your pack-config.json:https://github.com/huaweicloud/cloudide-plugin-packager/tree/codearts`);
+        }
+
+        const result = await zip(this.toZipFiles, zipPath, this.pluginRootFolder).catch((e) => console.error(e));
+        return result;
     }
 
     private doInclude() {

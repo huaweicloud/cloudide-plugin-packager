@@ -62,8 +62,8 @@ async function _publish(packagePath: string, manifest: Manifest, options: IPubli
     try {
         let token = options.pat;
         if (!token) {
-            console.error(
-                '\x1B[41m ERROR \x1B[0m Access Token not found, learn more in https://marketplace.ide.huaweicloud.com/publisher'
+            console.log(
+                'How to get the Access Token: https://github.com/huaweicloud/cloudide-plugin-packager/tree/codearts'
             );
             const prompt = inquirer.createPromptModule();
             const ans = await prompt([
@@ -109,24 +109,32 @@ async function _publish(packagePath: string, manifest: Manifest, options: IPubli
                 { headers: { 'x-publisher-token': token } }
             );
             if (pubResult.data.status === Code.success) {
-                console.log('✔️  Publish completed! open marketplace in https://marketplace.ide.huaweicloud.com');
+                console.log('✔️  Publish completed! Open Marketplace(https://marketplace.ide.huaweicloud.com).');
             } else {
                 console.error(
-                    '\x1B[41m ERROR \x1B[0m Extension publish failed, please check your package , then try again.'
+                    '\x1B[41m ERROR \x1B[0m Extension publish failed, please check your package, then try again.'
                 );
             }
         }
     } catch (error) {
         if ((error as AxiosError<StatusResponseError>).response) {
             const data = (error as AxiosError<StatusResponseError>).response?.data;
-            if (data) {
-                data.error_code
-                    ? console.error(`\x1B[41m ERROR \x1B[0m ${data.error_msg}`)
-                    : console.error(`\x1B[41m ERROR \x1B[0m ${data}`);
+            if (!data) {
+                console.error('\x1B[41m ERROR \x1B[0m Upload request failed, please try again.');
+                return;
             }
-            return;
+            if (!data.error_code) {
+                console.error(`\x1B[41m ERROR \x1B[0m ${data}`);
+                return;
+            }
+            if (data.error_code === 'IDE.07000043') {
+                console.error('\x1B[41m ERROR \x1B[0m Access Token is invalid!');
+            } else {
+                console.error(`\x1B[41m ERROR \x1B[0m ${data.error_msg}`);
+            }
+        } else {
+            console.error('\x1B[41m ERROR \x1B[0m Upload request failed, please try again.');
         }
-        console.error('\x1B[41m ERROR \x1B[0m Upload request failure, please try again.');
     }
 }
 
