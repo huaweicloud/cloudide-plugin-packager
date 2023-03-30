@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  ********************************************************************************/
 
+import * as fs from 'fs';
 import * as glob from 'glob-promise';
 import * as micromatch from 'micromatch';
 import * as path from 'path';
@@ -18,14 +19,34 @@ const ProdDefaultExclude = [
     '.prettierrc',
     '.prettierignore',
     '.eslintrc*',
+    '.editorconfig',
+    '.npmrc',
+    '.yarnrc',
+    '.babelrc*',
+    '.prettierrc*',
+    '.commitlintrc*',
+    '.gitattributes',
+    '.github',
+    '*.todo',
     'tsconfig.json',
     'tsfmt.json',
+    'tslint.yaml',
+    '.travis.yml',
+    'appveyor.yml',
     'webpack.config.js',
+    '.cz-config.js',
     'yarn-error.log',
     'yarn.lock',
     'npm-debug.log',
+    'npm-shrinkwrap.json',
     'package-lock.json',
     'pack-config.json',
+    '**/.git/**',
+    '**/*.vsix',
+    '**/.DS_Store',
+    '**/*.vsixmanifest',
+    '**/.vscode-test/**',
+    '**/.vscode-test-web/**',
     'src/**/*',
     '**/*.map',
     '*.carts'
@@ -41,6 +62,7 @@ export class Packing {
     private pluginRootFolder: string;
     private packMode: PackType;
     private dependencies: string[] = [];
+    private dependenciesFiles: string[] = [];
     private toZipFiles: string[] = [];
     private modeIgnore: string[] = [];
     private ignoreFiles: string[] = [];
@@ -70,9 +92,9 @@ export class Packing {
             dot: true
         };
 
-        this.toZipFiles = !this.dependencies.length
+        this.dependenciesFiles = !this.dependencies.length
             ? []
-            : this.toZipFiles.concat.apply(
+            : this.dependenciesFiles.concat.apply(
                 [],
                 await Promise.all(
                     this.dependencies.map((dependencyDirectory) => {
@@ -83,10 +105,10 @@ export class Packing {
                 )
             );
 
-        this.toZipFiles = this.toZipFiles.concat(
+        this.toZipFiles = this.toZipFiles.concat.apply(
+            [],
             await glob
                 .promise('**', Object.assign(globOptions, { cwd: this.pluginRootFolder }))
-                .then((data: string[]) => data.map((name) => path.join(this.pluginRootFolder, name)))
         );
 
         return await this.doExclude();
@@ -97,7 +119,6 @@ export class Packing {
             this.checkNecessary(this.userIgnore);
         }
         this.modeIgnore = this.packMode === 'production' ? [...this.userIgnore, ...ProdDefaultExclude] : this.userIgnore;
-        this.modeIgnore = this.modeIgnore.map(r => this.pluginRootFolder + r);
 
         const pkgInfo = await readPkg();
         const { publisher, name, version } = pkgInfo;
@@ -107,26 +128,26 @@ export class Packing {
         }
         const zipPath = path.resolve(this.pluginRootFolder + path.sep + moduleName + '.carts');
 
-        this.toZipFiles = this.toZipFiles.map(f => f.split(path.sep).join('/')).filter((file) => {
-            const isIgnored = !micromatch.contains(file, this.modeIgnore, MicromatchOptions) || micromatch.contains(file, this.includeFiles, MicromatchOptions);
-            if (isIgnored) {
-                this.ignoreFiles.push(file);
-            }
-            return isIgnored;
-        });
+        this.toZipFiles = this.toZipFiles
+            .map(f => f.split(path.sep).join('/'))
+            .filter((file) => {
+                const isMatch = !this.modeIgnore.some(i => micromatch.isMatch(file, i, MicromatchOptions)) || this.includeFiles.some(i => micromatch.isMatch(file, i, MicromatchOptions));
+                if (!isMatch) {
+                    this.ignoreFiles.push(file);
+                }
+                return isMatch;
+            });
+        this.toZipFiles = await filterVscodeignore(this.toZipFiles, this.pluginRootFolder);
 
         if (this.userIgnore.length || this.packMode === 'production') {
-            console.log(
-                'Excluded files:\n',
-                this.ignoreFiles.filter(f => !f.includes('node_modules'))
-            );
+            console.log('Excluded files:\n', this.ignoreFiles);
         }
 
         if (this.toZipFiles.length > 5000) {
             console.log(`This extension consists of ${this.toZipFiles.length} files, you could exclude unnecessary files by adding them to your pack-config.json:https://github.com/huaweicloud/cloudide-plugin-packager/tree/codearts`);
         }
 
-        const result = await zip(this.toZipFiles, zipPath, this.pluginRootFolder).catch((e) => console.error(e));
+        const result = await zip([...this.toZipFiles.map((name) => path.join(this.pluginRootFolder, name)), ...this.dependenciesFiles], zipPath, this.pluginRootFolder).catch((e) => console.error(e));
         return result;
     }
 
@@ -160,4 +181,55 @@ export class Packing {
             });
         });
     }
+}
+
+// Compatible with .vscodeignore
+function filterVscodeignore(
+    allFiles: string[],
+    cwd: string,
+    ignoreFile?: string
+): Promise<string[]> {
+    const files = allFiles.filter(f => !/\r$/m.test(f));
+    return (
+        fs.promises
+            .readFile(path.join(cwd, '.vscodeignore'), 'utf8')
+            .catch<string>(err =>
+                err.code !== 'ENOENT' ? Promise.reject(err) : ignoreFile ? Promise.reject(err) : Promise.resolve('')
+            )
+
+            // Parse raw ignore by splitting output into lines and filtering out empty lines and comments
+            .then(rawIgnore =>
+                rawIgnore
+                    .split(/[\n\r]/)
+                    .map(s => s.trim())
+                    .filter(s => !!s)
+                    .filter(i => !/^\s*#/.test(i))
+            )
+
+            // Add '/**' to possible folder names
+            .then(ignore => [
+                ...ignore,
+                ...ignore.filter(i => !/(^|\/)[^/]*\*[^/]*$/.test(i)).map(i => (/\/$/.test(i) ? `${i}**` : `${i}/**`)),
+            ])
+
+            // Split into ignore and negate list
+            .then(ignore =>
+                ignore.reduce<[string[], string[]]>(
+                    (r, e) => (!/^\s*!/.test(e) ? [[...r[0], e], r[1]] : [r[0], [...r[1], e]]),
+                    [[], []]
+                )
+            )
+            .then(r => {
+                return ({ ignore: r[0], negate: r[1] });
+            })
+
+            // Filter out files
+            .then(({ ignore, negate }) =>
+                files.filter(
+                    f =>
+                        !ignore.some(i => micromatch.isMatch(f, i, MicromatchOptions)) ||
+                        negate.some(i => micromatch.isMatch(f, i.substring(1), MicromatchOptions))
+                )
+            )
+    );
 }
