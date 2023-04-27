@@ -117,6 +117,7 @@ async function _publish(packagePath: string, manifest: Manifest, options: IPubli
             }
         }
     } catch (error) {
+        // Server side error
         if ((error as AxiosError<StatusResponseError>).response) {
             const data = (error as AxiosError<StatusResponseError>).response?.data;
             if (!data) {
@@ -124,7 +125,7 @@ async function _publish(packagePath: string, manifest: Manifest, options: IPubli
                 return;
             }
             if (!data.error_code) {
-                console.error(`\x1B[41m ERROR \x1B[0m ${data}`);
+                console.error(`\x1B[41m ERROR \x1B[0m Upload request failed: ${data}`);
                 return;
             }
             if (data.error_code === 'IDE.07000043') {
@@ -132,6 +133,12 @@ async function _publish(packagePath: string, manifest: Manifest, options: IPubli
             } else {
                 console.error(`\x1B[41m ERROR \x1B[0m ${data.error_msg}`);
             }
+
+            // Client side error
+        } else if ((error as AxiosError).message) {
+            console.error(`\x1B[41m ERROR \x1B[0m Upload request failed: ${(error as AxiosError).message}.`);
+
+            // Other error
         } else {
             console.error('\x1B[41m ERROR \x1B[0m Upload request failed, please try again.');
         }
