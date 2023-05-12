@@ -59,7 +59,7 @@ function checkRules(rules: string[]) {
     rules.forEach((rule) => {
         defaultExcludeFolders.forEach((item) => {
             if (rule.indexOf(item) !== -1) {
-                console.warn(`\x1B[43m WARNING \x1B[0m Can not change the packaging mode of ${item}.`);
+                console.warn(`\x1B[43m WARNING \x1B[0m You have changed the packaging mode of ${item}.`);
             }
         });
     });
