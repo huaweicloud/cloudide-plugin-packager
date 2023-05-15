@@ -44,7 +44,7 @@ export async function publish(options: IPublishOptions): Promise<void> {
         }
     } else {
         // 用户未提供路径时，先打包插件在发布
-        const { excludeFiles, includeFiles } = getPackageFiles([], []);
+        const { excludeFiles, includeFiles } = await getPackageFiles([], []);
         const packagePath = await pack('production', excludeFiles, includeFiles, true);
         if (packagePath) {
             try {

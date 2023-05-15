@@ -87,8 +87,8 @@ Unknown command '${cmd}'`;
 
 program.parse(process.argv);
 
-function toPack({ production, excludeFile, includeFile, skipPrepare }: PackageParams) {
-    const { excludeFiles, includeFiles } = getPackageFiles(includeFile, excludeFile);
+async function toPack({ production, excludeFile, includeFile, skipPrepare }: PackageParams) {
+    const { excludeFiles, includeFiles } = await getPackageFiles(includeFile, excludeFile);
     if (production) {
         pack('production', excludeFiles, includeFiles, skipPrepare);
     } else {

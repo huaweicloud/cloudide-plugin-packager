@@ -82,7 +82,6 @@ export class Packing {
         if (!skipPrepare) {
             await doPrepare();
         }
-        this.dependencies = await getInstalledPkgs();
 
         const globOptions = {
             nocase: true,
@@ -92,18 +91,23 @@ export class Packing {
             dot: true
         };
 
-        this.dependenciesFiles = !this.dependencies.length
-            ? []
-            : this.dependenciesFiles.concat.apply(
-                [],
-                await Promise.all(
-                    this.dependencies.map((dependencyDirectory) => {
-                        return glob
-                            .promise('**', Object.assign(globOptions, { cwd: dependencyDirectory }))
-                            .then((data) => data.map((name) => path.join(dependencyDirectory, name)));
-                    })
-                )
-            );
+        const includeDependencies = !this.userIgnore.some(ignore => ignore.startsWith('node_modules/*'));
+        if (includeDependencies) {
+            this.dependencies = await getInstalledPkgs();
+
+            this.dependenciesFiles = !this.dependencies.length
+                ? []
+                : this.dependenciesFiles.concat.apply(
+                    [],
+                    await Promise.all(
+                        this.dependencies.map((dependencyDirectory) => {
+                            return glob
+                                .promise('**', Object.assign(globOptions, { cwd: dependencyDirectory }))
+                                .then((data) => data.map((name) => path.join(dependencyDirectory, name)));
+                        })
+                    )
+                );
+        }
 
         this.toZipFiles = this.toZipFiles.concat.apply(
             [],
@@ -137,7 +141,6 @@ export class Packing {
                 }
                 return isMatch;
             });
-        this.toZipFiles = await filterVscodeignore(this.toZipFiles, this.pluginRootFolder);
 
         if (this.userIgnore.length || this.packMode === 'production') {
             console.log('Excluded files:\n', this.ignoreFiles);
@@ -181,55 +184,4 @@ export class Packing {
             });
         });
     }
-}
-
-// Compatible with .vscodeignore
-function filterVscodeignore(
-    allFiles: string[],
-    cwd: string,
-    ignoreFile?: string
-): Promise<string[]> {
-    const files = allFiles.filter(f => !/\r$/m.test(f));
-    return (
-        fs.promises
-            .readFile(path.join(cwd, '.vscodeignore'), 'utf8')
-            .catch<string>(err =>
-                err.code !== 'ENOENT' ? Promise.reject(err) : ignoreFile ? Promise.reject(err) : Promise.resolve('')
-            )
-
-            // Parse raw ignore by splitting output into lines and filtering out empty lines and comments
-            .then(rawIgnore =>
-                rawIgnore
-                    .split(/[\n\r]/)
-                    .map(s => s.trim())
-                    .filter(s => !!s)
-                    .filter(i => !/^\s*#/.test(i))
-            )
-
-            // Add '/**' to possible folder names
-            .then(ignore => [
-                ...ignore,
-                ...ignore.filter(i => !/(^|\/)[^/]*\*[^/]*$/.test(i)).map(i => (/\/$/.test(i) ? `${i}**` : `${i}/**`)),
-            ])
-
-            // Split into ignore and negate list
-            .then(ignore =>
-                ignore.reduce<[string[], string[]]>(
-                    (r, e) => (!/^\s*!/.test(e) ? [[...r[0], e], r[1]] : [r[0], [...r[1], e]]),
-                    [[], []]
-                )
-            )
-            .then(r => {
-                return ({ ignore: r[0], negate: r[1] });
-            })
-
-            // Filter out files
-            .then(({ ignore, negate }) =>
-                files.filter(
-                    f =>
-                        !ignore.some(i => micromatch.isMatch(f, i, MicromatchOptions)) ||
-                        negate.some(i => micromatch.isMatch(f, i.substring(1), MicromatchOptions))
-                )
-            )
-    );
 }

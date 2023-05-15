@@ -15,7 +15,7 @@ const UNIT = 20 * 1024 * 1024;
 export async function uploadStream(filePath: string, manifest: Manifest, token: string): Promise<UploadFileResponse> {
     const info = await fs.promises.stat(filePath);
     const size = info.size;
-    const fileName = `${manifest.publisher!.toLowerCase()}.${manifest.name}-${manifest.version}.crts`;
+    const fileName = `${manifest.publisher!.toLowerCase()}.${manifest.name}-${manifest.version}.carts`;
     const fileMD5 = await hashFile(filePath, 'md5');
     const fileSHA256 = await hashFile(filePath, 'sha256');
     if (size > MAXSIZE) {
@@ -123,18 +123,7 @@ export async function checkPackageFiles(): Promise<boolean> {
     const hasLicense = verifyFiles(licenses);
 
     if (!hasLicense) {
-        const message = 'LICENSE.md, LICENSE.txt or LICENSE not found. Do you want to continue?';
-        const ans = await prompt([
-            {
-                type: 'confirm',
-                name: 'check-license-result',
-                message,
-                prefix: '\x1B[43m WARNING \x1B[0m '
-            }
-        ]);
-        if (!ans['check-license-result']) {
-            return false;
-        }
+        console.warn('\x1B[43m WARNING \x1B[0m LICENSE.md, LICENSE.txt or LICENSE not found.');
     }
     return true;
 }
@@ -261,10 +250,10 @@ export function getUploadParams(params: UploadForm, token: string): { data: Form
     };
 }
 
-export function getPackageFiles(
+export async function getPackageFiles(
     includeFile: string[],
     excludeFile: string[]
-): { excludeFiles: string[]; includeFiles: string[] } {
+): Promise<{ excludeFiles: string[]; includeFiles: string[]; }> {
     const configPath = path.resolve(process.cwd()) + '/pack-config.json';
     let excludeFiles: string[] = [];
     let includeFiles: string[] = [];
@@ -274,6 +263,9 @@ export function getPackageFiles(
         const { exclude, include } = configs;
         excludeFiles = exclude && exclude.length ? excludeFile.concat(exclude) : excludeFile;
         includeFiles = include && include.length ? includeFile.concat(include) : includeFile;
+        const { ignore, negate } = await readVscodeignore(process.cwd());
+        excludeFiles = [...excludeFiles, ...ignore];
+        includeFiles = [...includeFiles, ...negate];
     } catch (err) {
         excludeFiles = excludeFile;
         includeFiles = includeFile;
@@ -283,4 +275,40 @@ export function getPackageFiles(
         excludeFiles,
         includeFiles
     };
+}
+
+function readVscodeignore(cwd: string): Promise<{ ignore: string[]; negate: string[] }> {
+    return (
+        fs.promises
+            .readFile(path.join(cwd, '.vscodeignore'), 'utf8')
+            .catch<string>(err =>
+                err.code !== 'ENOENT' ? Promise.reject(err) : Promise.resolve('')
+            )
+
+            // Parse raw ignore by splitting output into lines and filtering out empty lines and comments
+            .then(rawIgnore =>
+                rawIgnore
+                    .split(/[\n\r]/)
+                    .map(s => s.trim())
+                    .filter(s => !!s)
+                    .filter(i => !/^\s*#/.test(i))
+            )
+
+            // Add '/**' to possible folder names
+            .then(ignore => [
+                ...ignore,
+                ...ignore.filter(i => !/(^|\/)[^/]*\*[^/]*$/.test(i)).map(i => (/\/$/.test(i) ? `${i}**` : `${i}/**`)),
+            ])
+
+            // Split into ignore and negate list
+            .then(ignore =>
+                ignore.reduce<[string[], string[]]>(
+                    (r, e) => (!/^\s*!/.test(e) ? [[...r[0], e], r[1]] : [r[0], [...r[1], e.substring(1)]]),
+                    [[], []]
+                )
+            )
+            .then(r => {
+                return ({ ignore: r[0], negate: r[1] });
+            })
+    );
 }
