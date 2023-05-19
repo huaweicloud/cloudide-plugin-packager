@@ -258,19 +258,24 @@ export async function getPackageFiles(
     let excludeFiles: string[] = [];
     let includeFiles: string[] = [];
     try {
-        fs.accessSync(configPath);
-        const configs = JSON.parse(fs.readFileSync(configPath, { encoding: 'utf-8' }));
-        const { exclude, include } = configs;
-        excludeFiles = exclude && exclude.length ? excludeFile.concat(exclude) : excludeFile;
-        includeFiles = include && include.length ? includeFile.concat(include) : includeFile;
-        const { ignore, negate } = await readVscodeignore(process.cwd());
-        excludeFiles = [...excludeFiles, ...ignore];
-        includeFiles = [...includeFiles, ...negate];
+        if (fs.existsSync(configPath)) {
+            fs.accessSync(configPath);
+            const configs = JSON.parse(fs.readFileSync(configPath, { encoding: 'utf-8' }));
+            const { exclude, include } = configs;
+            excludeFiles = exclude && exclude.length ? excludeFile.concat(exclude) : excludeFile;
+            includeFiles = include && include.length ? includeFile.concat(include) : includeFile;
+        } else {
+            excludeFiles = excludeFile;
+            includeFiles = includeFile;
+        }
     } catch (err) {
         excludeFiles = excludeFile;
         includeFiles = includeFile;
     }
 
+    const { ignore, negate } = await readVscodeignore(process.cwd());
+    excludeFiles = [...excludeFiles, ...ignore];
+    includeFiles = [...includeFiles, ...negate];
     return {
         excludeFiles,
         includeFiles
