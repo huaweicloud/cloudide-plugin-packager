@@ -26,13 +26,25 @@ export interface IPublishOptions {
      * The Personal Access Token to use.
      */
     readonly pat: string;
+
+    /**
+     * The release type.
+     */
+    readonly type: string;
 }
 
 export async function publish(options: IPublishOptions): Promise<void> {
+    const PUBLISH_TYPE = ['1', '0'];
+    if (!PUBLISH_TYPE.includes(options.type)) {
+        console.error('\x1B[41m ERROR \x1B[0m Please set the correct publication type, "0" or "1".');
+        return;
+    }
+
     if (!options.packagePath) {
         console.error('\x1B[41m ERROR \x1B[0m Package not found. Please check the package path is correct?');
         return;
     }
+
     if (options.packagePath.length > 0) {
         for (const packagePath of options.packagePath) {
             try {
@@ -105,7 +117,7 @@ async function _publish(packagePath: string, manifest: Manifest, options: IPubli
         if (extensionStatus.status === Code.success) {
             const pubResult = await ApiService.getInstance().publishExtension(
                 `v1/marketplace/extension/${task_id}/archiving`,
-                { type: 0 },
+                { type: parseInt(options.type) },
                 { headers: { 'x-publisher-token': token } }
             );
             if (pubResult.data.status === Code.success) {

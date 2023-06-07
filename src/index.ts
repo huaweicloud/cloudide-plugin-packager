@@ -20,6 +20,7 @@ interface PackageParams {
 interface PublishParams {
     pat: string;
     packagePath: string[];
+    type: string;
 }
 
 program
@@ -68,8 +69,13 @@ program
         },
         []
     )
-    .action(({ pat, packagePath }: PublishParams) => {
-        toPublish({ pat, packagePath });
+    .option(
+        '-t, --type <type>',
+        'Set the release type. "0" indicates the grayscale release, "1" indicates the official release, and the default is grayscale release.',
+        '0'
+    )
+    .action(({ pat, packagePath, type }: PublishParams) => {
+        toPublish({ pat, packagePath, type });
     });
 
 program.on('command:*', ([cmd]: string) => {
@@ -96,6 +102,6 @@ async function toPack({ production, excludeFile, includeFile, skipPrepare }: Pac
     }
 }
 
-function toPublish({ pat, packagePath }: PublishParams) {
-    publish({ pat, packagePath });
+function toPublish({ pat, packagePath, type }: PublishParams) {
+    publish({ pat, packagePath, type });
 }

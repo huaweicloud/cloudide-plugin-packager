@@ -32,6 +32,7 @@ npm run pack
 6. You can also create a 'pack-config.json' file in workspace, directly to set files you want to include or exclude like: { "exclude": [], "include": [] }. (See Batch matching rule)
 7. `cap package -s`, skip npm install before packing.
 8. `cap publish`, pack in production mode and publish to [Marketplace](https://marketplace.ide.huaweicloud.com/).
+9. `cap publish -t 1`, Set the release type. "0" indicates the grayscale release, "1" indicates the official release, and the default is grayscale release.
 
 ### Batch matching rule
 
