@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse, CreateAxiosDefaults } from 'axios';
 import * as FormData from 'form-data';
 import { getProxySettings } from 'get-proxy-settings';
+import { apiHost } from "../config.json";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const HttpsProxyAgent = require('https-proxy-agent');
 
@@ -29,7 +30,7 @@ export default class ApiService {
     private async init() {
         const proxyConfig = await getProxySettings();
         const axiosOptions: CreateAxiosDefaults = {
-            baseURL: 'https://cloudide.cn-north-4.myhuaweicloud.com/',
+            baseURL: apiHost,
             proxy: false
         };
         if (proxyConfig?.http) {
